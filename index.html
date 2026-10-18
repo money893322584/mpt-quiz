@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>金钱人格测试 · 你是哪种财富体质</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  :root{
+    --gold:#b8860b; --gold2:#d4a017; --ink:#3a2e1f; --paper:#f7f1e3;
+    --card:#fffdf7; --line:#e5d9bd; --red:#b03a2e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+    background:linear-gradient(160deg,#f3e9d2 0%,var(--paper) 40%,#efe3c4 100%);
+    min-height:100vh;display:flex;justify-content:center;
+  }
+  .app{width:100%;max-width:480px;min-height:100vh;position:relative;padding:20px 16px 40px}
+  .page{display:none;animation:fadein .35s ease}
+  .page.active{display:block}
+  @keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  /* ===== 通用 ===== */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 18px;box-shadow:0 4px 18px rgba(120,90,30,.08)}
+  .btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;
+    font-weight:600;cursor:pointer;margin-top:12px;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn-main{background:linear-gradient(135deg,var(--gold2),#9a7208);color:#fff}
+  .btn-ghost{background:#fff;border:1.5px solid var(--gold);color:var(--gold)}
+  .btn-row{display:flex;gap:10px;margin-top:12px}
+  .btn-row .btn{margin-top:0}
+
+  /* ===== 密码页 ===== */
+  .logo{text-align:center;margin:40px 0 8px;font-size:38px}
+  .title{text-align:center;font-size:26px;font-weight:800;letter-spacing:2px;margin-bottom:6px}
+  .subtitle{text-align:center;color:#8a7a5c;font-size:14px;margin-bottom:28px;line-height:1.7}
+  .pw-input{width:100%;padding:14px;font-size:20px;text-align:center;letter-spacing:6px;
+    border:1.5px solid var(--line);border-radius:12px;background:#fff;outline:none}
+  .pw-input:focus{border-color:var(--gold)}
+  .pw-tip{text-align:center;font-size:12px;color:#a09070;margin-top:10px}
+  .err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+  .feature{font-size:13px;color:#8a7a5c;margin-top:14px;line-height:2}
+  .feature b{color:var(--gold)}
+
+  /* ===== 答题页 ===== */
+  .progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .progress-text{font-size:12px;color:#a09070;white-space:nowrap}
+  .progress-bar{flex:1;height:10px;background:#eadfc4;border-radius:6px;overflow:hidden}
+  .progress-inner{height:100%;width:0;border-radius:6px;
+    background:linear-gradient(90deg,var(--gold2),#8a6a08);transition:width .3s ease}
+  .dim-tag{display:inline-block;font-size:12px;color:var(--gold);border:1px solid var(--gold);
+    border-radius:20px;padding:2px 12px;margin-bottom:14px}
+  .question{font-size:17px;font-weight:600;line-height:1.7;margin-bottom:20px}
+  .opt{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;
+    font-size:15px;line-height:1.6;margin-bottom:12px;cursor:pointer;transition:all .15s}
+  .opt:active{transform:scale(.98)}
+  .opt.sel{border-color:var(--gold);background:#fdf6e0;
+    box-shadow:0 0 0 2px rgba(184,134,11,.25);animation:pop .25s ease}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+  .back-btn{background:none;border:none;color:#a09070;font-size:14px;padding:10px;
+    cursor:pointer;margin-top:6px}
+  .back-btn::before{content:"← "}
+
+  /* ===== 结果页 ===== */
+  .result-card{background:linear-gradient(170deg,#fffdf7,#faf3e0);
+    border:1.5px solid var(--gold2);border-radius:16px;padding:26px 20px;position:relative;overflow:hidden}
+  .result-card::before{content:"¥";position:absolute;right:-14px;top:-24px;font-size:110px;
+    color:rgba(184,134,11,.06);font-weight:800}
+  .rc-head{text-align:center}
+  .rc-badge{font-size:12px;color:#8a7a5c;letter-spacing:3px}
+  .rc-type{font-size:30px;font-weight:800;color:var(--gold);margin:8px 0 2px}
+  .rc-sub{font-size:14px;color:#8a7a5c}
+  .rc-rare{display:inline-block;margin-top:10px;font-size:13px;color:#fff;
+    background:linear-gradient(135deg,var(--red),#d35400);border-radius:20px;padding:4px 16px}
+  .rc-date{text-align:center;font-size:11px;color:#b0a385;margin-top:10px}
+  .radar-box{display:flex;justify-content:center;margin:18px 0 6px}
+  .sec-title{font-size:15px;font-weight:700;color:var(--gold);margin:20px 0 10px;
+    padding-left:10px;border-left:4px solid var(--gold2)}
+  .dim-bar{margin-bottom:10px}
+  .dim-bar .lb{display:flex;justify-content:space-between;font-size:13px;color:#6b5b3e;margin-bottom:4px}
+  .dim-bar .track{height:8px;background:#eee2c6;border-radius:5px;overflow:hidden}
+  .dim-bar .fill{height:100%;border-radius:5px;
+    background:linear-gradient(90deg,#e0b83e,#9a7208);transition:width .8s ease}
+  .p{font-size:14px;line-height:1.9;color:#57472e}
+  .p b{color:var(--ink)}
+  .quote{margin-top:20px;text-align:center;font-size:15px;font-weight:600;color:var(--gold);
+    background:#fdf3d7;border:1px dashed var(--gold2);border-radius:12px;padding:14px 12px;line-height:1.8}
+  .rc-foot{text-align:center;font-size:11px;color:#b0a385;margin-top:18px;line-height:1.8}
+
+  /* ===== 弹窗/Toast ===== */
+  .mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;
+    align-items:center;justify-content:center;padding:24px}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:360px;width:100%;padding:24px 20px;
+    text-align:center;animation:pop .25s ease}
+  .modal h3{font-size:18px;color:var(--gold);margin-bottom:12px}
+  .modal p{font-size:14px;line-height:1.9;color:#57472e;text-align:left}
+  .modal .hl{color:var(--red);font-weight:700}
+  #toast{position:fixed;left:50%;bottom:15%;transform:translateX(-50%);
+    background:rgba(0,0,0,.78);color:#fff;font-size:14px;padding:10px 22px;border-radius:20px;
+    z-index:99;display:none;white-space:nowrap}
+  #saveImg{max-width:100%;border-radius:10px;border:1px solid #eee}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ① 密码页 -->
+  <div id="pgGate" class="page active">
+    <div class="logo">🪙</div>
+    <div class="title">金钱人格测试</div>
+    <div class="subtitle">30道本土情景题 · 6大维度 · 8种财富体质<br>用金融心理学，看清你的钱到底去哪儿了</div>
+    <div class="card">
+      <div class="p" style="text-align:center;margin-bottom:14px">请输入测评密码</div>
+      <input id="pwInput" class="pw-input" type="text" inputmode="numeric" maxlength="12" placeholder="····">
+      <div class="err" id="pwErr"></div>
+      <button class="btn btn-main" onclick="submitPw()">验 证 密 码</button>
+      <div class="pw-tip" id="pwLeft"></div>
+      <div class="feature">
+        ✦ 每台设备可完整测试 <b>3次</b><br>
+        ✦ 支持返回上一题重新选择<br>
+        ✦ 结果页可保存长图 / 复制链接分享
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 答题页 -->
+  <div id="pgQuiz" class="page">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-inner" id="progBar"></div></div>
+      <div class="progress-text" id="progText">1/30</div>
+    </div>
+    <div class="card">
+      <div class="dim-tag" id="dimTag"></div>
+      <div class="question" id="qText"></div>
+      <div id="optBox"></div>
+      <button class="back-btn" id="backBtn" onclick="goBack()">返回上一题</button>
+    </div>
+  </div>
+
+  <!-- ③ 结果页 -->
+  <div id="pgResult" class="page">
+    <div class="result-card" id="resultCard">
+      <div class="rc-head">
+        <div class="rc-badge">— 金钱人格测试 —</div>
+        <div class="rc-type" id="rType"></div>
+        <div class="rc-sub" id="rSub"></div>
+        <div class="rc-rare" id="rRare"></div>
+        <div class="rc-date" id="rDate"></div>
+      </div>
+      <div class="radar-box"><svg id="radar" width="260" height="240" viewBox="0 0 260 240"></svg></div>
+      <div class="sec-title">六维财富画像</div>
+      <div id="dimBars"></div>
+      <div class="sec-title">体质解读</div>
+      <div id="rBody"></div>
+      <div class="quote" id="rQuote"></div>
+      <div class="rc-foot">金钱脚本理论（Klontz Money Scripts）× 心理账户 × 中国式人情消费<br>本结果仅描述行为倾向，不构成任何投资建议</div>
+    </div>
+    <button class="btn btn-main" onclick="saveLongImage()">📷 保存结果长图</button>
+    <button class="btn btn-ghost" onclick="copyLink()">🔗 复制结果分享链接</button>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="retake()">🔄 再测一次</button>
+      <button class="btn btn-ghost" onclick="showReviewGift()">🎁 好评有礼</button>
+    </div>
+  </div>
+</div>
+
+<!-- 好评有礼弹窗 -->
+<div class="mask" id="giftMask">
+  <div class="modal">
+    <h3>🎁 好评有礼 · 返现1元</h3>
+    <p>1️⃣ 前往购买店铺给本测评一个<b class="hl">五星好评</b>（可写一句真实感受）；<br>
+       2️⃣ 对好评页面<b class="hl">截图</b>；<br>
+       3️⃣ 联系店铺客服发送截图，审核通过后 <b class="hl">1元现金红包</b> 立即到账～<br><br>
+       感谢你的支持，祝你财运体质越来越好！💰</p>
+    <button class="btn btn-main" onclick="hide('giftMask')">我知道啦</button>
+  </div>
+</div>
+
+<!-- 长图预览弹窗 -->
+<div class="mask" id="imgMask">
+  <div class="modal" style="max-width:400px">
+    <h3>长图已生成 ✅</h3>
+    <p style="text-align:center">手机端：请<b class="hl">长按下方图片</b>保存到相册<br>电脑端：图片已自动下载</p>
+    <div style="max-height:50vh;overflow:auto;margin:10px 0">
+      <img id="saveImg" alt="结果长图">
+    </div>
+    <button class="btn btn-main" onclick="hide('imgMask')">关 闭</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 配置区 ================= */
+const MASTER_PASSWORD = "8888";   // ← 统一密码，在这里改
+const MAX_USES = 3;               // ← 每台设备可测次数，在这里改
+
+const DIMS = ["花钱冲动度","储蓄安全感","面子账户度","风险胆量","账户规划度","账单回避度"];
+
+/* ================= 题库（30题，6维×5题） ================= */
+const QUESTIONS = [
+ // D1 花钱冲动度
+ {d:0,q:"深夜刷到直播间主播喊“最后100单，拍完下架”，购物车里那件你其实用不太上——",o:[["秒拍，抢到就是赚到",4],["犹豫十分钟，还是拍了",3],["加购退出，第二天冷静了再决定",2],["关掉直播间，跟自己说“又是套路”",1]]},
+ {d:0,q:"加完班晚上十点，路过常去的奶茶店——",o:[["不用路过，下单页面早就开着",4],["奖励一下自己，买",3],["看看有没有券，有券才买",2],["今天太晚了，喝了我睡不着，走",1]]},
+ {d:0,q:"双十一预售，你的常规操作是——",o:[["定金尾款一气呵成，凑满减凑到凌晨",4],["列了清单，但也多买了不少",3],["只买清单上的",2],["双十一是什么？我只在缺东西的时候买",1]]},
+ {d:0,q:"心情很差的时候，最容易让你好转的是——",o:[["下单一直想要的那件东西，拆快递的瞬间治愈",4],["吃顿好的",3],["找人聊聊，或者睡一觉",2],["花钱也没用，问题还在那儿",1]]},
+ {d:0,q:"朋友晒了新款手机，而你手里的用了三年——",o:[["已经在比价了",4],["心痒，研究几天可能就买了",3],["欣赏一下，等自己的彻底不能用再说",2],["我三年不换是因为我不想换",1]]},
+ // D2 储蓄安全感
+ {d:1,q:"每月工资到账，你的第一反应是——",o:[["先转一笔到储蓄/理财账户，剩下的才是生活费",4],["心里盘算一下这个月要还什么",3],["看一眼余额，开心几秒钟",2],["到账了？先点个外卖庆祝",1]]},
+ {d:1,q:"账上存款到多少，你晚上才睡得踏实——",o:[["有具体数字，比如“6个月生活费”，到了才安心",4],["越多越安心，但没明确线",3],["够花就行，没想太多",2],["钱是流动的，存在那儿的钱都是亏",1]]},
+ {d:1,q:"月底发现账上还剩2000块，你的感觉是——",o:[["有点慌，得控制下旬支出",4],["还行，正常水平",3],["正好，这两天想买的刚好够",2],["太好了，周末可以去吃那家新开的",1]]},
+ {d:1,q:"如果明天突然失业，你现在的存款能撑——",o:[["一年以上，这就是我存钱的原因",4],["半年左右",3],["两三个月吧",2],["一个月以内，但我从不为这事失眠",1]]},
+ {d:1,q:"对“钱是攒出来的，不是挣出来的”这句话——",o:[["深以为然，是我微信收藏过的",4],["有道理，但我做不到那么狠",3],["半对半错，挣得多才是关键",2],["不认同，会花才会挣",1]]},
+ // D3 面子账户度
+ {d:2,q:"多年未见的老同学聚会，快结束时的买单之争——",o:[["抢着买单，掏手机的手速就是态度",4],["想AA但不好意思提，最后要么被抢要么跟着抢",3],["提前就在群里说过这次AA，坦坦荡荡",2],["谁抢让谁，下次我回请，不亏欠就好",1]]},
+ {d:2,q:"老家亲戚饭桌上问“现在一个月挣多少啊”——",o:[["报个往上的数，不能让人看扁",4],["报个模糊但体面的数",3],["“够花，饿不死”，笑着岔开",2],["实话实说，挣多少说多少",1]]},
+ {d:2,q:"关系一般的大学同学结婚，请帖发来了——",o:[["按当地“体面线”随，不能低于大家",4],["随个平均值，肉疼但没办法",3],["人不到礼到，随个心意数",2],["关系一般就不去也不随，这钱花得没道理",1]]},
+ {d:2,q:"第一次见对方家长/重要相亲场合，你的行头——",o:[["专门置办一套像样的，第一面不能输",4],["穿自己最好的那套，不专门买",3],["干净整洁就行，对方看的是人",2],["我平时什么样就什么样，装不累吗",1]]},
+ {d:2,q:"月薪一万的前提下，你更接受哪种消费观——",o:[["该有的排场要有，别人看得见的钱不能省",4],["重要场合舍得，日常随意",3],["面子是虚的，里子才是自己的",2],["越活越明白，最贵的面子是不装",1]]},
+ // D4 风险胆量
+ {d:3,q:"你买的基金一个月绿了10%，你会——",o:[["补仓，跌就是打折",4],["按兵不动，装死等回本",3],["赎回一半，先保住一半",2],["全部赎回，再也不碰，睡觉都安稳了",1]]},
+ {d:3,q:"朋友拉你投一个副业项目，说稳赚，但要投2万——",o:[["有点意思，研究一下就投",4],["只投得起亏得起的数，比如2000",3],["让朋友把资料发来，先查三天",2],["“稳赚”俩字一出，直接拒了",1]]},
+ {d:3,q:"假设你有50万存款，更接近你的配置是——",o:[["大头放进有波动的资产里搏增长",4],["一半稳健一半搏",3],["大头存银行/国债，小头玩玩",2],["全部存款类，波动让我睡不着",1]]},
+ {d:3,q:"换工作时，更打动你的是——",o:[["期权/提成空间大的，搏成了就翻身",4],["底薪一般但成长快的大厂",3],["稳定加适度上涨的",2],["编制/铁饭碗，降薪一点也认",1]]},
+ {d:3,q:"你对“负债”的真实态度是——",o:[["好的负债是杠杆，房贷车贷经营贷该背就背",4],["房贷可以，消费贷坚决不碰",3],["尽量不欠钱，欠着心里像压着石头",2],["一分钱不欠，包括房贷——没有债务的人生才自由",1]]},
+ // D5 账户规划度
+ {d:4,q:"关于记账，你最接近的状态是——",o:[["记了好几年，分账户分标签，月底复盘",4],["记过，断断续续，大项会记",3],["不记，但心里大概有数",2],["不记，记了也不敢看",1]]},
+ {d:4,q:"拿到一笔年底奖（假设2万），你会——",o:[["事先就有分配方案：储蓄、投资、奖励自己各占多少",4],["先存一半，剩下的随意",3],["先犒劳自己，剩下的看情况",2],["到手即花，等了一年了就该花",1]]},
+ {d:4,q:"你的房租/房贷占到手收入的比例——",o:[["刻意控制在30%以内，这是底线",4],["大概知道占比，35%上下",3],["没算过，应该不超过一半吧",2],["住得舒服最重要，占比随缘",1]]},
+ {d:4,q:"买一件超过3000块的东西之前，你通常会——",o:[["比价、看测评、等大促，决策周期一周起",4],["想两天，问问朋友意见",3],["喜欢就买，纠结的过程比钱更贵",2],["3000块以下的东西不需要思考",1]]},
+ {d:4,q:"对“做预算”这件事，你的看法是——",o:[["预算是我的财务宪法，每月必做",4],["有个大概框架，执行看心情",3],["预算会让我焦虑，反而不花不了",2],["人生已经够累了，不想再管钱管得那么细",1]]},
+ // D6 账单回避度
+ {d:5,q:"信用卡/花呗账单日出来的那一刻——",o:[["当天就看，账目清楚",1],["看是会看的，深呼吸之后",2],["能拖就拖，还款日自动扣就行",3],["设置了全额自动还款，具体多少我从来看——看了心烦",4]]},
+ {d:5,q:"朋友聚餐后群里说“人均86，发我”——",o:[["立刻转，顺手核对一下人均对不对",1],["马上转，不核对",2],["拖到晚上，先心里嘀咕“怎么又是AA”",3],["说实话，这种场合让我浑身不自在，最好别AA",4]]},
+ {d:5,q:"支付宝/微信推的年度账单总结——",o:[["早早点开，一页页看完还截图",1],["会看，看完沉默一会儿",2],["点开了一半就退出来，太刺激",3],["连点都不点，我不知道=没发生",4]]},
+ {d:5,q:"家人问你最近投资理财情况——",o:[["知无不言，还顺便聊市场",1],["说个大概，细节略过",2],["含糊带过“还行，没亏”",3],["谁问都打岔，钱的事我不跟任何人聊",4]]},
+ {d:5,q:"你对“和朋友谈钱”这件事的真实感受是——",o:[["亲兄弟明算账，谈钱不伤感情，不谈才伤",1],["能谈，但会注意方式",2],["尽量不谈，能自己扛就自己扛",3],["谈钱让我不舒服，能逃就逃",4]]}
+];
+
+/* ================= 8+1 种体质档案 ================= */
+const TYPES = {
+ mifeng:{icon:"🐝",name:"蜜蜂体质",sub:"会挣会管会花型",script:"金钱警惕脚本（健康版）",
+  img:"你是人群里罕见的“财务秩序感”拥有者——会挣、会管、也会花。工资到账先分配，快乐消费有预算，你的账本比大多数人的恋爱史还精彩。",
+  adv:"抗风险能力优秀，你是朋友圈里唯一有“应急基金”概念的人，危机来临时最先睡得着。",
+  warn:"警惕把秩序变成焦虑——偶尔的“糊涂钱”不是失控，是给生活留的呼吸口。",
+  tip:"每月留一笔不记账、不复盘的“糊涂基金”，花完为止。管钱是本事，放过钱也是。",
+  quote:"我是蜜蜂体质：我的Excel比我的周末还充实。"},
+ pixiu:{icon:"🐉",name:"貔貅体质",sub:"只进不出型",script:"金钱警惕脚本（重度）",
+  img:"你的钱包是个单向阀——进得来，出不去。看到余额上涨的快乐，胜过世间绝大多数娱乐。储蓄是你对抗不确定性的铠甲。",
+  adv:"抗风险能力碾压80%的人，存款数字就是你的底气与自由。",
+  warn:"小心滑向“过度警惕”：该花的体验钱、该投的自我投资也被你拦下。钱在贬值，人生体验也在。",
+  tip:"每月设一笔“只能花掉”的快乐基金，花不完强行清零——这是给守财脑的物理外挂。",
+  quote:"我是貔貅体质，进我的钱包就别想出去。"},
+ songshu:{icon:"🐿️",name:"松鼠体质",sub:"囤积焦虑型",script:"金钱警惕脚本 + 稀缺感",
+  img:"你像过冬的松鼠，拼命囤积却始终觉得不够。存款5万，快乐预算5块——你囤的不是钱，是安全感。",
+  adv:"你的焦虑其实是一种天赋级预警系统，让你比多数人更早做好过冬准备。",
+  warn:"永远差一点的“安全线”会吃掉当下的生活。囤积的尽头不是安全，是遗憾。",
+  tip:"把焦虑具象化：写下你最担心的事和应对方案，你会发现“安全线”其实早就到了。",
+  quote:"松鼠体质认证：我不是抠，我是在为整个冬天负责。"},
+ maomi:{icon:"🐈",name:"猫咪体质",sub:"悦己消费型",script:"金钱崇拜脚本（悦己版）",
+  img:"你的工资在卡里只是路过。钱都花在哄自己开心上——奶茶、好物、说走就走的小确幸，人间清醒又人间清醒地穷。",
+  adv:"你花钱买的从来不是东西，是精神股息。情绪价值回报率，你全场最高。",
+  warn:"“对自己好”和“冲动买单”的边界容易模糊，月底的账单会替你复盘这一切。",
+  tip:"给悦己消费设个“快乐额度”，额度内尽情花、零愧疚——快乐需要边界，不是枷锁。",
+  quote:"猫咪体质实测：钱没了中国还会有的（但这句本月已说第8次）。"},
+ kongque:{icon:"🦚",name:"孔雀体质",sub:"排场即人设型",script:"金钱地位脚本",
+  img:"你可以吃泡面，但出门必须打车；可以不买新的，但随礼绝不能小。别人看得见的钱，你从不省——消费是你递出去的社会名片。",
+  adv:"人脉场上的天然买单王，你的体面确实换来了别人换不到的机会与信任。",
+  warn:"面子账户是唯一没有上限的账户，饭局、随礼、朋友圈消费正在悄悄吃掉你的复利。",
+  tip:"把每月人情支出单独设“面子账户”硬上限，超支部分挪到下月——让排场有预算。",
+  quote:"孔雀体质认证：我的钱有一半花在“不能让人看出来我没钱”上。"},
+ liebao:{icon:"🐆",name:"猎豹体质",sub:"高风险高波动型",script:"金钱崇拜脚本 + 低损失厌恶",
+  img:"人生就是一场杠杆。别人理财，你理的是心跳——你的心跳和你的基金K线图高度重合。敢搏，是你的底色。",
+  adv:"敢搏是稀缺品质。风口来临时，你是最可能翻身的那一个。",
+  warn:"高波动是双刃剑：一次深跌可能伤到本金，也可能伤到心态。留足安全垫再冲刺。",
+  tip:"把资产按“保命/稳健/搏增长”三账户切分，搏的那份全亏也不影响生活，才算真猎豹。",
+  quote:"猎豹体质：别人在理财，我在练心跳。"},
+ tuoniao:{icon:"🦩",name:"鸵鸟体质",sub:"不看就没有发生型",script:"金钱回避脚本",
+  img:"账单自动还款、年度账单拒收、花呗额度就是你的“虚拟余额”。你不是不理财，你是在财务世界闭眼修行——不知道=没发生。",
+  adv:"全场情绪最稳。你从不为涨跌失眠，心理内耗为全体质最低。",
+  warn:"看不见的漏洞（自动续费、免密支付、利滚利）专吃鸵鸟——你的钱不是花掉的，是漏掉的。",
+  tip:"只做一件事：每周日设个10分钟闹钟看一次账单。不求管理，只求看见。",
+  quote:"鸵鸟体质实测：我不是没钱，我是不知道我没钱。"},
+ jianghu:{icon:"🍶",name:"江湖体质",sub:"人情满溢型",script:"金钱地位脚本 + 中国人情法则",
+  img:"为朋友花钱从不眨眼，份子钱战场永远先锋。买单的手速就是你的态度，饭局上的你自带“钱光照拂”气场。",
+  adv:"人缘是你的硬通货，你富可敌国——朋友遍天下那种“富”。",
+  warn:"人情账最难算：单方面的大方久了，容易养出理所当然。真江湖，讲究礼尚往来。",
+  tip:"大方可以，但给自己设一条“人情水位线”——水位线以上的邀请，学会笑着说“下次我请”。",
+  quote:"江湖体质认证：份子钱战损榜，我年年第一。"},
+ danqian:{icon:"🐟",name:"钱淡体质",sub:"隐藏款 · 全场最淡",script:"多脚本均衡（稀有）",
+  img:"你对钱的态度就像对前任——毫无波澜。不冲动、不焦虑、不炫耀、不回避，六维全部平静如水。这种境界，全国不足1%。",
+  adv:"情绪稳定是你的超能力，任何市场波动和你的人生波动都很难真正伤害你。",
+  warn:"“淡”有时也是“没想过”。钱值得被认真对待一次——哪怕就从看一眼余额开始。",
+  tip:"花30分钟给自己做一次财务盘点：知道自己有什么，是所有自由的前提。",
+  quote:"钱淡体质：不是躺平，是钱的境界比我高。"}
+};
+
+/* ================= 体质判定 ================= */
+function classify(d){
+  const near=v=>v>=12&&v<=16;
+  if(d.every(near)) return "danqian";
+  if(d[5]>=16 && d[4]<=13) return "tuoniao";
+  if(d[2]>=17) return "kongque";
+  if(d[3]>=16) return "liebao";
+  if(d[1]>=16 && d[0]<=13) return d[4]>=14?"pixiu":"songshu";
+  if(d[0]>=16 && d[1]<=13) return "maomi";
+  if(d[2]>=14 && d[0]>=14) return "jianghu";
+  if(d[4]>=15 && d[5]<=10) return "mifeng";
+  const order=["maomi","songshu","kongque","liebao","mifeng","tuoniao"];
+  return order[d.indexOf(Math.max(...d))];
+}
+
+/* ================= 状态与密码逻辑（单密码 · 每设备3次） ================= */
+let answers = new Array(30).fill(null);
+let curIdx = 0;
+let dims = [0,0,0,0,0,0];
+let resultKey = null;
+
+function getUsed(){ return +(localStorage.getItem("mpt_used") || 0); }
+function getLeft(){ return Math.max(0, MAX_USES - getUsed()); }
+function consumeOnce(){ localStorage.setItem("mpt_used", getUsed() + 1); }
+
+function updatePwTip(){
+  document.getElementById("pwLeft").textContent =
+    `本设备剩余可用次数：${getLeft()} 次（共${MAX_USES}次）`;
+}
+
+function submitPw(){
+  const pw = document.getElementById("pwInput").value.trim();
+  const err = document.getElementById("pwErr");
+  if(!pw){ err.textContent = "请输入密码"; return; }
+  if(pw !== MASTER_PASSWORD){ err.textContent = "密码不正确，请检查后重试"; return; }
+  if(getLeft() <= 0){
+    err.textContent = `本设备的${MAX_USES}次机会已用完，如需再测请联系客服`;
+    return;
+  }
+  sessionStorage.setItem("mpt_authed", "1");
+  startTest();
+}
+
+function startTest(){
+  if(getLeft() <= 0){
+    showPage("pgGate");
+    document.getElementById("pwErr").textContent = "本设备次数已用完，请联系客服";
+    return;
+  }
+  consumeOnce();
+  answers = new Array(30).fill(null);
+  curIdx = 0;
+  renderQuiz();
+  showPage("pgQuiz");
+  updatePwTip();
+}
+
+/* ================= 答题渲染 ================= */
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+function renderQuiz(){
+  const q = QUESTIONS[curIdx];
+  document.getElementById("dimTag").textContent = `维度${q.d+1} · ${DIMS[q.d]}`;
+  document.getElementById("qText").textContent = `${curIdx+1}. ${q.q}`;
+  const box = document.getElementById("optBox"); box.innerHTML="";
+  q.o.forEach((opt,i)=>{
+    const div=document.createElement("div");
+    div.className="opt"+(answers[curIdx]===i?" sel":"");
+    div.textContent=opt[0];
+    div.onclick=()=>choose(i);
+    box.appendChild(div);
+  });
+  document.getElementById("progBar").style.width=(curIdx/30*100)+"%";
+  document.getElementById("progText").textContent=`${curIdx+1}/30`;
+  document.getElementById("backBtn").style.visibility = curIdx===0?"hidden":"visible";
+}
+function choose(i){
+  answers[curIdx]=i;
+  if(curIdx===29){ calcResult(); return; }
+  curIdx++; renderQuiz();
+}
+function goBack(){ if(curIdx>0){ curIdx--; renderQuiz(); } }
+
+function calcResult(){
+  dims=[0,0,0,0,0,0];
+  answers.forEach((a,i)=>{ dims[QUESTIONS[i].d]+=QUESTIONS[i].o[a][1]; });
+  resultKey = classify(dims);
+  renderResult();
+  showPage("pgResult");
+}
+
+/* ================= 结果渲染 ================= */
+function renderResult(){
+  const t=TYPES[resultKey];
+  const sum=dims.reduce((a,b)=>a+b,0);
+  const rare = resultKey==="danqian" ? 0.9 : 3+((sum*13+dims[0]*7)%12);
+  document.getElementById("rType").textContent = t.icon+" "+t.name;
+  document.getElementById("rSub").textContent = t.sub+" · 主导金钱脚本："+t.script;
+  document.getElementById("rRare").textContent = `稀有体质 · 全国仅约 ${rare}% 的人和你一样`;
+  document.getElementById("rDate").textContent = "测于 "+new Date().toLocaleDateString("zh-CN");
+  document.getElementById("rBody").innerHTML = `
+    <p class="p"><b>【体质画像】</b>${t.img}</p>
+    <p class="p"><b>【脚本溯源】</b>你的金钱行为由「${t.script}」主导——它藏在潜意识里，悄悄替你做每一个花钱的决定。</p>
+    <p class="p"><b>【财富优势】</b>${t.adv}</p>
+    <p class="p"><b>【隐形雷区】</b>${t.warn}</p>
+    <p class="p"><b>【行动建议】</b>${t.tip}</p>`;
+  document.getElementById("rQuote").textContent = "“"+t.quote+"”";
+  const bars=document.getElementById("dimBars"); bars.innerHTML="";
+  dims.forEach((v,i)=>{
+    bars.innerHTML+=`<div class="dim-bar"><div class="lb"><span>${DIMS[i]}</span><span>${v}/20</span></div>
+      <div class="track"><div class="fill" style="width:0"></div></div></div>`;
+  });
+  drawRadar();
+  setTimeout(()=>{ document.querySelectorAll(".fill").forEach((el,i)=>el.style.width=(dims[i]/20*100)+"%"); },100);
+}
+function drawRadar(){
+  const svg=document.getElementById("radar"); const cx=130,cy=125,R=88,N=6;
+  const pt=(i,r)=>{const a=-Math.PI/2+i*2*Math.PI/N;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  let s="";
+  [0.25,0.5,0.75,1].forEach(k=>{
+    s+=`<polygon points="${Array.from({length:N},(_,i)=>pt(i,R*k).join(",")).join(" ")}" fill="none" stroke="#e5d9bd" stroke-width="1"/>`;
+  });
+  for(let i=0;i<N;i++){const [x,y]=pt(i,R);s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e5d9bd"/>`;}
+  s+=`<polygon points="${Array.from({length:N},(_,i)=>pt(i,R*dims[i]/20).join(",")).join(" ")}" fill="rgba(212,160,23,.35)" stroke="#b8860b" stroke-width="2" style="animation:fadein .6s ease"/>`;
+  for(let i=0;i<N;i++){const [x,y]=pt(i,R*dims[i]/20);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="#b8860b"/>`;}
+  for(let i=0;i<N;i++){const [x,y]=pt(i,R+22);
+    s+=`<text x="${x}" y="${y}" font-size="11" fill="#8a7a5c" text-anchor="middle">${DIMS[i].slice(0,2)}</text>`;
+    s+=`<text x="${x}" y="${y+13}" font-size="10" fill="#b8860b" text-anchor="middle">${dims[i]}</text>`;}
+  svg.innerHTML=s;
+}
+
+/* ================= 保存长图 ================= */
+function saveLongImage(){
+  toast("正在生成长图…");
+  html2canvas(document.getElementById("resultCard"),{scale:2,useCORS:true,backgroundColor:"#f7f1e3"})
+  .then(c=>{
+    const url=c.toDataURL("image/png");
+    document.getElementById("saveImg").src=url;
+    const a=document.createElement("a"); a.href=url; a.download="我的财富体质.png"; a.click();
+    show("imgMask");
+  }).catch(()=>toast("生成失败，请截图保存"));
+}
+
+/* ================= 复制链接 / 再测 / 好评 ================= */
+function copyLink(){
+  const url=location.origin+location.pathname+"#r="+btoa(unescape(encodeURIComponent(dims.join(","))));
+  const done=()=>toast("链接已复制，去分享吧！");
+  if(navigator.clipboard){ navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done)); }
+  else fallbackCopy(url,done);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+  ta.select(); document.execCommand("copy"); document.body.removeChild(ta); done();
+}
+function retake(){
+  if(getLeft() <= 0){
+    toast("本设备次数已用完，如需再测请联系客服");
+    sessionStorage.removeItem("mpt_authed");
+    showPage("pgGate");
+    return;
+  }
+  startTest();
+}
+function showReviewGift(){ show("giftMask"); }
+function show(id){document.getElementById(id).classList.add("show");}
+function hide(id){document.getElementById(id).classList.remove("show");}
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block";
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.style.display="none",2200);
+}
+
+/* ================= 启动：支持分享链接直达结果 ================= */
+(function init(){
+  const m=location.hash.match(/#r=(.+)/);
+  if(m){
+    try{
+      dims=decodeURIComponent(escape(atob(m[1]))).split(",").map(Number);
+      if(dims.length===6&&dims.every(v=>v>=6&&v<=24)){
+        resultKey=classify(dims); renderResult(); showPage("pgResult"); return;
+      }
+    }catch(e){}
+  }
+  updatePwTip();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MPT 管理后台</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:20px;background:#f5f7fa;color:#222}
+  h1{font-size:22px}
+  .card{background:#fff;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  input,select{width:100%;padding:10px;margin:6px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;font-size:15px}
+  button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:8px;background:#0ea5a4;color:#fff;font-size:16px;cursor:pointer}
+  button:active{opacity:.8}
+  .out{margin-top:10px;padding:10px;background:#f0fdfa;border-radius:8px;font-size:14px;white-space:pre-wrap;word-break:break-all}
+  .err{background:#fef2f2;color:#b91c1c}
+  .hidden{display:none}
+  label{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<h1>⚙️ MPT 测评管理后台</h1>
+
+<div class="card" id="loginCard">
+  <label>管理员密码（默认 admin666）</label>
+  <input id="apw" type="password" placeholder="输入管理员密码">
+  <button onclick="login()">进入后台</button>
+  <div class="out hidden" id="loginMsg"></div>
+</div>
+
+<div id="panel" class="hidden">
+
+  <div class="card">
+    <b>📊 数据统计</b>
+    <button onclick="stats()">刷新统计</button>
+    <div class="out hidden" id="statOut"></div>
+  </div>
+
+  <div class="card">
+    <b>🎟️ 生成兑换码</b>
+    <label>数量（1~50）</label>
+    <input id="cnt" type="number" value="10" min="1" max="50">
+    <label>每码可恢复次数（默认3）</label>
+    <input id="uses" type="number" value="3" min="1" max="99">
+    <button onclick="gen()">生成</button>
+    <div class="out hidden" id="genOut"></div>
+  </div>
+
+  <div class="card">
+    <b>🔑 修改测评密码</b>
+    <label>新的测评密码（用户答题用的那个）</label>
+    <input id="npw" type="text" placeholder="例如 6666">
+    <button onclick="setpw()">确认修改</button>
+    <div class="out hidden" id="pwMsg"></div>
+  </div>
+
+  <div class="card">
+    <b>🔢 修改每台设备次数上限</b>
+    <label>新上限（默认3）</label>
+    <input id="nmax" type="number" value="3" min="1" max="99">
+    <button onclick="setmax()">确认修改</button>
+    <div class="out hidden" id="maxMsg"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(window.MPT_CONFIG.SUPABASE_URL, window.MPT_CONFIG.SUPABASE_ANON_KEY);
+function show(id, text, isErr){const el=document.getElementById(id);el.classList.remove('hidden');el.textContent=text;el.className='out'+(isErr?' err':'');}
+async function login(){
+  const pw=document.getElementById('apw').value.trim();
+  const {data,error}=await sb.rpc('mpt_admin_stats',{admin_pw:pw});
+  if(error||!data||data.ok===false){show('loginMsg',(data&&data.msg)||error.message||'密码错误',true);return;}
+  window._apw=pw;document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('panel').classList.remove('hidden');stats();
+}
+async function stats(){
+  const {data}=await sb.rpc('mpt_admin_stats',{admin_pw:window._apw});
+  if(!data||data.ok===false){show('statOut',data?data.msg:'查询失败',true);return;}
+  show('statOut',`累计测试：${data.tests} 次\n已用设备：${data.devices} 台\n兑换码总数：${data.codes_total} 张\n已使用：${data.codes_used} 张`);
+}
+async function gen(){
+  const n=parseInt(document.getElementById('cnt').value)||10;
+  const u=parseInt(document.getElementById('uses').value)||3;
+  const codes=Array.from({length:n},()=>('MPT-'+Math.random().toString(36).slice(2,8).toUpperCase()));
+  const {data}=await sb.rpc('mpt_admin_gen_codes',{admin_pw:window._apw,new_codes:codes,code_uses:u});
+  if(!data||data.ok===false){show('genOut',data?data.msg:'生成失败',true);return;}
+  show('genOut','✅ 已生成 '+data.count+' 张（每张恢复 '+u+' 次）：\n\n'+codes.join('\n')+'\n\n（长按可复制，发给买家即可）');
+}
+async function setpw(){
+  const v=document.getElementById('npw').value.trim();
+  if(!v){show('pwMsg','请输入新密码',true);return;}
+  const {data}=await sb.rpc('mpt_admin_set',{admin_pw:window._apw,k:'MASTER_PASSWORD',v:v});
+  show('pwMsg',data&&data.ok?'✅ 测评密码已改为：'+v:(data?data.msg:'修改失败'),!(data&&data.ok));
+}
+async function setmax(){
+  const v=document.getElementById('nmax').value.trim();
+  const {data}=await sb.rpc('mpt_admin_set',{admin_pw:window._apw,k:'MAX_USES',v:v});
+  show('maxMsg',data&&data.ok?'✅ 每台设备上限已改为：'+v:(data?data.msg:'修改失败'),!(data&&data.ok));
+}
+</script>
+</body>
+</html>
