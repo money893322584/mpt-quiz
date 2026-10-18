@@ -2,102 +2,203 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MPT 管理后台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPT 测评管理后台</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <style>
-  body{font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:20px;background:#f5f7fa;color:#222}
-  h1{font-size:22px}
-  .card{background:#fff;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  input,select{width:100%;padding:10px;margin:6px 0;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;font-size:15px}
-  button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:8px;background:#0ea5a4;color:#fff;font-size:16px;cursor:pointer}
-  button:active{opacity:.8}
-  .out{margin-top:10px;padding:10px;background:#f0fdfa;border-radius:8px;font-size:14px;white-space:pre-wrap;word-break:break-all}
-  .err{background:#fef2f2;color:#b91c1c}
-  .hidden{display:none}
-  label{font-size:13px;color:#555}
+  * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+  body { background:#f4f6f9; min-height:100vh; padding:24px 16px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:18px; }
+  .card { background:#fff; border-radius:14px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,.06); margin-bottom:16px; }
+  input, select { width:100%; padding:12px; border:1px solid #d7dce3; border-radius:10px; font-size:15px; margin:6px 0 14px; }
+  button { width:100%; padding:13px; border:none; border-radius:10px; background:#14b8a6; color:#fff; font-size:16px; cursor:pointer; }
+  button:hover { background:#0d9488; }
+  button.gray { background:#64748b; }
+  .msg { padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:14px; display:none; }
+  .err { background:#fee2e2; color:#b91c1c; }
+  .ok  { background:#dcfce7; color:#15803d; }
+  .diag { background:#fef9c3; color:#854d0e; font-size:13px; line-height:1.7; margin-top:12px; padding:10px 14px; border-radius:8px; display:none; white-space:pre-wrap; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:8px 6px; border-bottom:1px solid #eee; text-align:left; }
+  th { color:#64748b; font-weight:600; }
+  .stat { display:inline-block; background:#f1f5f9; border-radius:10px; padding:12px 20px; margin:0 10px 10px 0; text-align:center; }
+  .stat b { display:block; font-size:22px; color:#0f172a; }
+  .stat span { font-size:13px; color:#64748b; }
+  .hidden { display:none; }
+  .row { display:flex; gap:12px; }
+  .row > div { flex:1; }
 </style>
 </head>
 <body>
-<h1>⚙️ MPT 测评管理后台</h1>
+<div class="wrap">
 
-<div class="card" id="loginCard">
-  <label>管理员密码（默认 admin666）</label>
-  <input id="apw" type="password" placeholder="输入管理员密码">
-  <button onclick="login()">进入后台</button>
-  <div class="out hidden" id="loginMsg"></div>
+  <!-- 登录区 -->
+  <div id="loginBox">
+    <h1>⚙️ MPT 测评管理后台</h1>
+    <div class="card">
+      <div id="loginMsg" class="msg err"></div>
+      <label>管理员密码（默认 admin666）</label>
+      <input type="password" id="pwd" placeholder="请输入管理员密码">
+      <button onclick="login()">进入后台</button>
+      <div id="diag" class="diag"></div>
+    </div>
+  </div>
+
+  <!-- 主面板 -->
+  <div id="mainBox" class="hidden">
+    <h1>📊 后台管理</h1>
+    <div id="mainMsg" class="msg"></div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">📈 使用统计 <button style="width:auto;padding:6px 14px;font-size:13px" onclick="loadStats()">刷新</button></h3>
+      <div id="statsArea">加载中…</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">🎫 生成兑换码</h3>
+      <div class="row">
+        <div><label>生成张数</label><input type="number" id="genCount" value="1" min="1" max="100"></div>
+        <div><label>有效天数</label><input type="number" id="genDays" value="30" min="1"></div>
+      </div>
+      <button onclick="genCodes()">生成兑换码</button>
+      <div id="codeArea" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">🔑 设置</h3>
+      <label>修改用户密码（买家输入的那个）</label>
+      <input type="text" id="newUserPwd" placeholder="输入新密码，留空则不修改">
+      <label>用户密码默认可用次数</label>
+      <input type="number" id="newLimit" placeholder="留空则不修改">
+      <button class="gray" onclick="saveSet()">保存设置</button>
+    </div>
+
+    <button class="gray" onclick="location.reload()">退出登录</button>
+  </div>
 </div>
 
-<div id="panel" class="hidden">
-
-  <div class="card">
-    <b>📊 数据统计</b>
-    <button onclick="stats()">刷新统计</button>
-    <div class="out hidden" id="statOut"></div>
-  </div>
-
-  <div class="card">
-    <b>🎟️ 生成兑换码</b>
-    <label>数量（1~50）</label>
-    <input id="cnt" type="number" value="10" min="1" max="50">
-    <label>每码可恢复次数（默认3）</label>
-    <input id="uses" type="number" value="3" min="1" max="99">
-    <button onclick="gen()">生成</button>
-    <div class="out hidden" id="genOut"></div>
-  </div>
-
-  <div class="card">
-    <b>🔑 修改测评密码</b>
-    <label>新的测评密码（用户答题用的那个）</label>
-    <input id="npw" type="text" placeholder="例如 6666">
-    <button onclick="setpw()">确认修改</button>
-    <div class="out hidden" id="pwMsg"></div>
-  </div>
-
-  <div class="card">
-    <b>🔢 修改每台设备次数上限</b>
-    <label>新上限（默认3）</label>
-    <input id="nmax" type="number" value="3" min="1" max="99">
-    <button onclick="setmax()">确认修改</button>
-    <div class="out hidden" id="maxMsg"></div>
-  </div>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
 <script>
-const sb = supabase.createClient(window.MPT_CONFIG.SUPABASE_URL, window.MPT_CONFIG.SUPABASE_ANON_KEY);
-function show(id, text, isErr){const el=document.getElementById(id);el.classList.remove('hidden');el.textContent=text;el.className='out'+(isErr?' err':'');}
+/* 1. 读取配置 */
+let CFG = { url:'', key:'' };
+(function findConfig(){
+  const c = window.MPT_CONFIG || window.MPT || window.CONFIG || {};
+  CFG.url = c.url || c.SUPABASE_URL || c.supabaseUrl || window.SUPABASE_URL || '';
+  CFG.key = c.key || c.SUPABASE_KEY || c.ANON_KEY || c.anonKey || c.supabaseKey || window.SUPABASE_KEY || '';
+})();
+
+let sb = null;
+if (window.supabase && CFG.url && CFG.key) {
+  try { sb = window.supabase.createClient(CFG.url, CFG.key); } catch(e){ sb = null; }
+}
+
+/* 2. 工具 */
+function withTimeout(promise, ms=15000){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms))
+  ]);
+}
+function cnError(e){
+  const m = (e && e.message) ? e.message : String(e);
+  if (m.includes('密码错误'))
+    return '🔑 管理员密码不对，请确认输入（默认 admin666）';
+  if (m.includes('timeout'))
+    return '⏳ 连接数据库超时，请检查网络后重试';
+  if (m.includes('fetch') || m.includes('NetworkError') || m.includes('Failed'))
+    return '🌐 网络不通：无法连接数据库。建议换手机流量试试';
+  if (m.includes('404') || m.includes('Not Found') || m.includes('could not find') || m.includes('schema'))
+    return '❌ 数据库里找不到后台函数。请先去 Supabase SQL Editor 运行建函数的 SQL';
+  return '⚠️ ' + m;
+}
+function showMsg(id, text, isErr=true){
+  const el = document.getElementById(id);
+  el.className = 'msg ' + (isErr?'err':'ok');
+  el.textContent = text;
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; }, 6000);
+}
+
+/* 3. 登录（参数名：admin_pw，与数据库函数一致） */
 async function login(){
-  const pw=document.getElementById('apw').value.trim();
-  const {data,error}=await sb.rpc('mpt_admin_stats',{admin_pw:pw});
-  if(error||!data||data.ok===false){show('loginMsg',(data&&data.msg)||error.message||'密码错误',true);return;}
-  window._apw=pw;document.getElementById('loginCard').classList.add('hidden');
-  document.getElementById('panel').classList.remove('hidden');stats();
+  const pwd = document.getElementById('pwd').value.trim();
+  const diag = document.getElementById('diag');
+  diag.style.display = 'block';
+
+  if (!window.supabase) return diag.textContent = '诊断：❌ Supabase 库加载失败（CDN被拦截），换浏览器/网络再试。';
+  if (!CFG.url)         return diag.textContent = '诊断：❌ 没读到数据库网址，检查 config.js 是否为 window.MPT_CONFIG 格式。';
+  if (!CFG.key)         return diag.textContent = '诊断：❌ 没读到钥匙，检查 config.js 里的 key。';
+  if (!pwd)             return diag.textContent = '诊断：请先输入密码。';
+  diag.textContent = '诊断：✅ 配置读取成功，正在连接数据库…';
+
+  try {
+    const { data, error } = await withTimeout(sb.rpc('mpt_admin_stats', { admin_pw: pwd }));
+    if (error) throw error;
+    window._adminPwd = pwd;
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('mainBox').classList.remove('hidden');
+    renderStats(data);
+  } catch(e){
+    diag.textContent = '诊断失败原因：\n' + cnError(e);
+  }
 }
-async function stats(){
-  const {data}=await sb.rpc('mpt_admin_stats',{admin_pw:window._apw});
-  if(!data||data.ok===false){show('statOut',data?data.msg:'查询失败',true);return;}
-  show('statOut',`累计测试：${data.tests} 次\n已用设备：${data.devices} 台\n兑换码总数：${data.codes_total} 张\n已使用：${data.codes_used} 张`);
+
+/* 4. 统计 */
+function renderStats(d){
+  const el = document.getElementById('statsArea');
+  try {
+    const row = Array.isArray(d) ? d[0] : d;
+    if (!row) { el.textContent = '没有返回数据'; return; }
+    let html = '';
+    for (const k in row) {
+      if (typeof row[k] === 'object') continue;
+      html += `<div class="stat"><b>${row[k]}</b><span>${k}</span></div>`;
+    }
+    el.innerHTML = html || '无数据';
+  } catch(e){ el.textContent = '解析失败：' + e.message; }
 }
-async function gen(){
-  const n=parseInt(document.getElementById('cnt').value)||10;
-  const u=parseInt(document.getElementById('uses').value)||3;
-  const codes=Array.from({length:n},()=>('MPT-'+Math.random().toString(36).slice(2,8).toUpperCase()));
-  const {data}=await sb.rpc('mpt_admin_gen_codes',{admin_pw:window._apw,new_codes:codes,code_uses:u});
-  if(!data||data.ok===false){show('genOut',data?data.msg:'生成失败',true);return;}
-  show('genOut','✅ 已生成 '+data.count+' 张（每张恢复 '+u+' 次）：\n\n'+codes.join('\n')+'\n\n（长按可复制，发给买家即可）');
+async function loadStats(){
+  try {
+    const { data, error } = await withTimeout(sb.rpc('mpt_admin_stats', { admin_pw: window._adminPwd }));
+    if (error) throw error;
+    renderStats(data);
+    showMsg('mainMsg','✅ 已刷新', false);
+  } catch(e){ showMsg('mainMsg', cnError(e)); }
 }
-async function setpw(){
-  const v=document.getElementById('npw').value.trim();
-  if(!v){show('pwMsg','请输入新密码',true);return;}
-  const {data}=await sb.rpc('mpt_admin_set',{admin_pw:window._apw,k:'MASTER_PASSWORD',v:v});
-  show('pwMsg',data&&data.ok?'✅ 测评密码已改为：'+v:(data?data.msg:'修改失败'),!(data&&data.ok));
+
+/* 5. 生成兑换码 */
+async function genCodes(){
+  const count = parseInt(document.getElementById('genCount').value)||1;
+  const days  = parseInt(document.getElementById('genDays').value)||30;
+  try {
+    const { data, error } = await withTimeout(sb.rpc('mpt_admin_gen_codes', { admin_pw: window._adminPwd, count: count, days: days }));
+    if (error) throw error;
+    const list = Array.isArray(data) ? data : (data && data.codes) || [];
+    const codes = list.map(x => typeof x==='string' ? x : (x.code||x.code_text||JSON.stringify(x)));
+    document.getElementById('codeArea').innerHTML =
+      `<div class="ok msg" style="display:block">✅ 成功生成 ${codes.length} 张：</div>` +
+      codes.map(c=>`<div style="padding:8px;background:#f8fafc;border-radius:8px;margin-bottom:6px;font-family:monospace">${c}</div>`).join('');
+  } catch(e){ showMsg('mainMsg', cnError(e)); }
 }
-async function setmax(){
-  const v=document.getElementById('nmax').value.trim();
-  const {data}=await sb.rpc('mpt_admin_set',{admin_pw:window._apw,k:'MAX_USES',v:v});
-  show('maxMsg',data&&data.ok?'✅ 每台设备上限已改为：'+v:(data?data.msg:'修改失败'),!(data&&data.ok));
+
+/* 6. 保存设置 */
+async function saveSet(){
+  const np = document.getElementById('newUserPwd').value.trim();
+  const nl = document.getElementById('newLimit').value.trim();
+  if (!np && !nl) return showMsg('mainMsg','请至少填写一项');
+  try {
+    if (np) {
+      const { error } = await withTimeout(sb.rpc('mpt_admin_set', { admin_pw: window._adminPwd, setting_key:'USER_PASSWORD', setting_value: np }));
+      if (error) throw error;
+    }
+    if (nl) {
+      const { error } = await withTimeout(sb.rpc('mpt_admin_set', { admin_pw: window._adminPwd, setting_key:'USER_DEFAULT_LIMIT', setting_value: nl }));
+      if (error) throw error;
+    }
+    showMsg('mainMsg','✅ 保存成功', false);
+    loadStats();
+  } catch(e){ showMsg('mainMsg', cnError(e)); }
 }
 </script>
 </body>
