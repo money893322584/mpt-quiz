@@ -61,12 +61,16 @@
   .hero .p-name { font-size:28px; font-weight:bold; color:#ffd700; margin:10px 0; }
   .hero .p-desc { font-size:16px; color:#b8c6d0; max-width:500px; margin:0 auto; }
 
+  /* 无边框板块（四维度得分） */
+  .bare-section { margin-bottom:16px; animation:fadeIn .5s ease; }
+  .bare-section h3 { font-size:19px; color:#ffd700; margin-bottom:14px; text-align:center; }
+
   /* 区块标题 */
   h2 { font-size:21px; color:#ffd700; margin:32px 0 6px; display:flex; align-items:center; gap:10px; }
   h2::after { content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,215,0,.4),transparent); }
   .h2-sub { font-size:14px; color:#8fa3b0; margin-bottom:16px; }
 
-  /* 内容卡片 —— 字号放大 */
+  /* 内容卡片 */
   .frame { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
            border-radius:16px; padding:24px 20px; margin-bottom:16px; animation:fadeIn .5s ease; }
   .frame h3 { font-size:19px; color:#ffd700; margin-bottom:12px; display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
@@ -130,6 +134,79 @@
 
   /* 截图时修正渐变文字（html2canvas 不支持 background-clip:text） */
   .capturing h1 { background:none !important; -webkit-text-fill-color:#ffd700 !important; color:#ffd700 !important; }
+
+  /* ============================================
+     ★ 移动端适配：缩小字号与间距，页面更协调
+     ============================================ */
+  @media (max-width:600px){
+    body { padding:12px; }
+    .container { padding:26px 16px; border-radius:16px; margin-bottom:24px; }
+
+    /* 标题 */
+    h1 { font-size:22px; margin-bottom:6px; }
+    .subtitle { font-size:14px; margin-bottom:18px; }
+    .feature-list { font-size:14px; margin:14px 0 6px; }
+
+    /* 按钮 */
+    .btn { padding:13px; font-size:15px; max-width:300px; }
+    .btn-row .btn { min-width:140px; }
+
+    /* 答题页 */
+    #quizPage h1 { font-size:20px; }
+    .q-tag { font-size:12px; padding:3px 12px; }
+    .q-title { font-size:16px; margin-bottom:16px; line-height:1.7; }
+    .option { padding:12px; font-size:14px; margin-bottom:10px; }
+    .progress-text { font-size:12px; }
+
+    /* 结果页 hero */
+    .hero { padding:22px 14px 20px; margin-bottom:18px; border-radius:16px; }
+    .hero h1 { font-size:20px; }
+    .hero .subtitle { font-size:13px; margin-bottom:14px; }
+    .hero .p-icon { font-size:44px; }
+    .hero .p-name { font-size:22px; margin:6px 0; }
+    .hero .p-desc { font-size:14px; }
+
+    /* 内容卡片 */
+    .frame { padding:18px 14px; margin-bottom:12px; border-radius:14px; }
+    .frame h3 { font-size:16px; margin-bottom:8px; }
+    .frame p, .frame li { font-size:14px; line-height:1.8; }
+    .frame li { margin-bottom:8px; }
+    .bare-section h3 { font-size:16px; margin-bottom:10px; }
+    h2 { font-size:17px; margin:24px 0 4px; }
+    .h2-sub { font-size:12px; margin-bottom:12px; }
+    .divider { margin:20px 0; }
+    .sci-tag { font-size:11px; padding:2px 8px; }
+
+    /* 得分 */
+    .grid2 { gap:10px; }
+    .score-cell { padding:13px 12px; }
+    .score-cell .sc-name { font-size:13px; margin-bottom:8px; }
+    .sc-num { font-size:12px; margin-top:6px; }
+    .bar { height:7px; }
+
+    /* 脚本标签 */
+    .script-tag { font-size:12px; padding:5px 12px; }
+    .dom-line { font-size:15px; margin-top:10px; }
+
+    /* 工具箱 */
+    .method-toggle { padding:13px 14px; font-size:14px; }
+    .method-body-inner { padding:14px 12px; }
+    .method-body-inner .tag { font-size:12px; margin-bottom:8px; }
+    .method-body-inner li { font-size:14px; margin-bottom:8px; }
+    .why { font-size:12.5px; margin-top:10px; }
+    .step-num { width:20px; height:20px; line-height:20px; font-size:12px; margin-right:6px; }
+
+    /* 行动计划 */
+    .plan-item { padding:13px 12px; }
+    .plan-check { font-size:18px; margin-right:10px; }
+    .plan-text { font-size:14px; line-height:1.8; }
+
+    /* 其他 */
+    .quote { font-size:13px; margin:18px 0; }
+    .footer-note { font-size:12px; line-height:1.9; margin-top:16px; }
+    .save-tip { font-size:12px; }
+    .btn-row { gap:8px; }
+  }
 </style>
 </head>
 <body>
@@ -181,8 +258,8 @@
       <div class="p-desc" id="pDesc"></div>
     </div>
 
-    <!-- 四维得分 -->
-    <div class="frame">
+    <!-- 四维度得分（无边框） -->
+    <div class="bare-section">
       <h3>📊 四维度得分</h3>
       <div class="grid2" id="scoreGrid"></div>
     </div>
@@ -222,7 +299,7 @@
       本测评仅供自我探索参考，不构成投资建议或心理诊断。
     </div>
 
-    <!-- 操作按钮：保存结果图 + 重新测评 -->
+    <!-- 操作按钮 -->
     <div class="center-btn">
       <div class="btn-row">
         <button class="btn btn-gold" id="saveBtn" onclick="saveResultImage()">📸 保存结果图</button>
@@ -280,7 +357,6 @@ function startQuiz(){
   startPage.classList.add('hidden'); quizPage.classList.remove('hidden'); render();
 }
 function backToStart(){
-  // 重置所有状态，返回开始页面（不刷新）
   answers.fill(null); current = 0;
   resultPage.classList.add('hidden');
   startPage.classList.remove('hidden');
@@ -393,7 +469,7 @@ function showResult(){
   /* 工具箱（默认展开） */
   document.getElementById('toolbox').innerHTML = toolboxHTML();
   document.querySelectorAll('.method-body').forEach(b=>{
-    b.style.maxHeight = b.scrollHeight + "px";   // ★ 默认展开
+    b.style.maxHeight = b.scrollHeight + "px";
   });
 
   /* 行动计划 */
@@ -476,24 +552,21 @@ async function saveResultImage(){
   btn.disabled = true; btn.textContent = "⏳ 正在生成...";
   try{
     const node = document.getElementById('resultPage');
-    // 截图前处理：修正渐变标题、确保工具箱展开、脱离屏幕遮挡问题
     const bodies = [...document.querySelectorAll('.method-body')];
     const saved = bodies.map(b=>b.style.maxHeight);
     bodies.forEach(b=>b.style.maxHeight = b.scrollHeight+"px");
     node.classList.add('capturing');
 
     const canvas = await html2canvas(node, {
-      scale: 2,                          // 2倍清晰度
+      scale: 2,
       useCORS: true,
-      backgroundColor: '#16222e',        // 深色背景兜底
+      backgroundColor: '#16222e',
       windowWidth: node.scrollWidth,
     });
 
-    // 恢复状态
     node.classList.remove('capturing');
     bodies.forEach((b,i)=>b.style.maxHeight = saved[i]);
 
-    // 导出 PNG 并触发下载
     const link = document.createElement('a');
     link.download = '金钱财富深度画像.png';
     link.href = canvas.toDataURL('image/png');
